@@ -8,6 +8,7 @@ import usersRoutes from './routes/users.routes.js';
 import categoriesRoutes from './routes/categories.routes.js';
 import subcategoriesRoutes from './routes/subcategories.routes.js';
 import productsRoutes from './routes/products.routes.js';
+import specificationsRoutes from './routes/specifications.routes.js';
 import { authenticateToken, requireAdmin, requireEditor } from './middleware/auth.middleware.js';
 
 const logger = pino();
@@ -41,6 +42,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/subcategories', subcategoriesRoutes);
 app.use('/api/products', productsRoutes);
+app.use('/api/specifications', specificationsRoutes);
 
 // Protected routes examples
 app.get('/api/admin/dashboard', authenticateToken, requireAdmin, (req, res) => {

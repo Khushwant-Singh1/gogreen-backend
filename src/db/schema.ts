@@ -1,4 +1,5 @@
-import { pgTable, uuid, varchar, timestamp, pgEnum, text, json, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, pgEnum, text, json, jsonb, boolean, serial, integer } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 
 // Enum for user roles
 export const userRoleEnum = pgEnum('user_role', ['admin', 'editor']);
@@ -94,10 +95,61 @@ export const pendingChanges = pgTable('pending_changes', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Product Specifications table with JSONB for flexible table structures
+export const productSpecifications = pgTable('product_specifications', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  productId: uuid('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 255 }).notNull(),
+  // 'grid' = standard table, 'matrix' = complex merged headers, 'chart' = chart data
+  type: varchar('type', { length: 50 }).notNull().default('grid'),
+  // JSONB column for flexible table structure (headers, rows, merged cells)
+  content: jsonb('content').notNull(),
+  displayOrder: varchar('display_order', { length: 10 }),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Define relations
+export const productsRelations = relations(products, ({ one, many }) => ({
+  subcategory: one(subcategories, {
+    fields: [products.subcategoryId],
+    references: [subcategories.id],
+  }),
+  specifications: many(productSpecifications),
+}));
+
+export const subcategoriesRelations = relations(subcategories, ({ one, many }) => ({
+  category: one(categories, {
+    fields: [subcategories.categoryId],
+    references: [categories.id],
+  }),
+  products: many(products),
+}));
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  subcategories: many(subcategories),
+}));
+
+export const specificationsRelations = relations(productSpecifications, ({ one }) => ({
+  product: one(products, {
+    fields: [productSpecifications.productId],
+    references: [products.id],
+  }),
+}));
+
 // Type exports for TypeScript
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;
+export type Product = typeof products.$inferSelect;
+export type NewProduct = typeof products.$inferInsert;
+export type ProductSpecification = typeof productSpecifications.$inferSelect;
+export type NewProductSpecification = typeof productSpecifications.$inferInsert;
+export type Category = typeof categories.$inferSelect;
+export type NewCategory = typeof categories.$inferInsert;
+export type Subcategory = typeof subcategories.$inferSelect;
+export type NewSubcategory = typeof subcategories.$inferInsert;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
 export type PendingChange = typeof pendingChanges.$inferSelect;
 export type NewPendingChange = typeof pendingChanges.$inferInsert;
