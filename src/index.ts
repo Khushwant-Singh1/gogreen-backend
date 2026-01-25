@@ -1,6 +1,6 @@
+import './env.js';
 import express from 'express';
 import cookieParser from 'cookie-parser';
-import pino from 'pino';
 import authRoutes from './routes/auth.routes.js';
 import auditRoutes from './routes/audit.routes.js';
 import pendingChangesRoutes from './routes/pending-changes.routes.js';
@@ -15,19 +15,22 @@ import settingsRoutes from './routes/settings.routes.js';
 import contactRoutes from './routes/contact.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import { authenticateToken, requireAdmin, requireEditor } from './middleware/auth.middleware.js';
+import logger, { requestLogger, errorLogger } from './utils/logger.js';
 
-const logger = pino();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use('/uploads', express.static('uploads')); // Serve uploaded images
+
+// Logging middleware
+app.use(requestLogger);
+// app.use('/uploads', express.static('uploads')); // Serve uploaded images (Disabled: migrated to S3)
 
 // CORS configuration (adjust for your frontend URL)
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:3000');
+  res.header('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:3000') ;
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
@@ -69,10 +72,25 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Error logging middleware (must be after routes)
+app.use(errorLogger);
+
+// Global error handler
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  res.status(500).json({ 
+    success: false, 
+    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message 
+  });
+});
+
 // Start server
 app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
-  logger.info('Default credentials:');
-  logger.info('  Admin - email: admin@gogreen.com, password: admin123');
-  logger.info('  Editor - email: editor@gogreen.com, password: editor123');
+  logger.info('🚀 Server starting...');
+  logger.info(`🌐 Server running on port ${PORT}`);
+  logger.info(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.info(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+  logger.info('👤 Default credentials:');
+  logger.info('   Admin - email: admin@gogreen.com, password: admin123');
+  logger.info('   Editor - email: editor@gogreen.com, password: editor123');
+  logger.info('✅ Server ready to accept connections');
 });

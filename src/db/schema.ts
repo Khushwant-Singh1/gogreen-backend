@@ -61,6 +61,7 @@ export const products = pgTable('products', {
   shortDescription: text('short_description'),
   price: varchar('price', { length: 50 }),
   images: json('images').$type<string[]>(),
+  pdfUrl: varchar('pdf_url', { length: 500 }),
   specifications: json('specifications'),
   features: json('features').$type<string[]>(),
   displayOrder: varchar('display_order', { length: 10 }),

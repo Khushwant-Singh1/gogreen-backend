@@ -1,5 +1,5 @@
 import { db } from '../db/index.js';
-import { products } from '../db/schema.js';
+import { products, productSpecifications } from '../db/schema.js';
 import { eq, desc, and, sql } from 'drizzle-orm';
 
 export interface Product {
@@ -11,6 +11,7 @@ export interface Product {
   shortDescription: string | null;
   price: string | null;
   images: string[] | null;
+  pdfUrl: string | null;
   specifications: any | null;
   features: string[] | null;
   displayOrder: string | null;
@@ -29,6 +30,7 @@ export class ProductModel {
     shortDescription?: string | undefined;
     price?: string | undefined;
     images?: string[] | undefined;
+    pdfUrl?: string | undefined;
     specifications?: any;
     features?: string[] | undefined;
     displayOrder?: string | undefined;
@@ -39,40 +41,69 @@ export class ProductModel {
   }
 
   static async getAll(includeInactive = false): Promise<Product[]> {
-    if (includeInactive) {
-      return await db.select().from(products).orderBy(desc(products.displayOrder));
-    }
-    return await db.select().from(products).where(eq(products.isActive, true)).orderBy(desc(products.displayOrder));
+    const query = db.query.products.findMany({
+      where: includeInactive ? undefined : eq(products.isActive, true),
+      with: {
+        specifications: {
+          where: eq(productSpecifications.isActive, true),
+        },
+      },
+      orderBy: desc(products.displayOrder),
+    });
+    return await query;
   }
 
   static async getById(id: string): Promise<Product | null> {
-    const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
-    return result.length > 0 ? result[0]! : null;
+    const result = await db.query.products.findFirst({
+      where: eq(products.id, id),
+      with: {
+        specifications: {
+          where: eq(productSpecifications.isActive, true),
+        },
+      },
+    });
+    return result || null;
   }
 
   static async getBySlug(slug: string): Promise<Product | null> {
-    const result = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
-    return result.length > 0 ? result[0]! : null;
+    const result = await db.query.products.findFirst({
+      where: eq(products.slug, slug),
+      with: {
+        specifications: {
+          where: eq(productSpecifications.isActive, true),
+        },
+      },
+    });
+    return result || null;
   }
 
   static async getBySubcategoryId(subcategoryId: string, includeInactive = false): Promise<Product[]> {
-    if (includeInactive) {
-      return await db.select().from(products).where(eq(products.subcategoryId, subcategoryId)).orderBy(desc(products.displayOrder));
-    }
-    return await db
-      .select()
-      .from(products)
-      .where(and(eq(products.subcategoryId, subcategoryId), eq(products.isActive, true)))
-      .orderBy(desc(products.displayOrder));
+    const query = db.query.products.findMany({
+      where: includeInactive 
+        ? eq(products.subcategoryId, subcategoryId)
+        : and(eq(products.subcategoryId, subcategoryId), eq(products.isActive, true)),
+      with: {
+        specifications: {
+          where: eq(productSpecifications.isActive, true),
+        },
+      },
+      orderBy: desc(products.displayOrder),
+    });
+    return await query;
   }
 
   static async getFeatured(limit = 10): Promise<Product[]> {
-    return await db
-      .select()
-      .from(products)
-      .where(and(eq(products.isFeatured, true), eq(products.isActive, true)))
-      .orderBy(desc(products.displayOrder))
-      .limit(limit);
+    const query = db.query.products.findMany({
+      where: and(eq(products.isFeatured, true), eq(products.isActive, true)),
+      with: {
+        specifications: {
+          where: eq(productSpecifications.isActive, true),
+        },
+      },
+      orderBy: desc(products.displayOrder),
+      limit,
+    });
+    return await query;
   }
 
   static async update(id: string, data: Partial<Omit<Product, 'id' | 'createdAt' | 'updatedAt'>>): Promise<Product | null> {

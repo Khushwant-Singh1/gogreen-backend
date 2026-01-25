@@ -4,6 +4,7 @@ import { ProductModel } from '../models/product.model.js';
 import { AuditLogModel } from '../models/audit-log.model.js';
 import { z } from 'zod';
 import { ActionType } from '../types/auth.js';
+import logger, { logBusinessOperation } from '../utils/logger.js';
 
 const router: IRouter = Router();
 
@@ -24,22 +25,28 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     
     let products;
     if (searchQuery) {
+      logBusinessOperation('Searching products', { query: searchQuery, includeInactive });
       products = await ProductModel.search(searchQuery, includeInactive);
     } else if (featured) {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      logBusinessOperation('Fetching featured products', { limit });
       products = await ProductModel.getFeatured(limit);
     } else if (subcategoryId) {
+      logBusinessOperation('Fetching products by subcategory', { subcategoryId, includeInactive });
       products = await ProductModel.getBySubcategoryId(subcategoryId, includeInactive);
     } else {
+      logBusinessOperation('Fetching all products', { includeInactive });
       products = await ProductModel.getAll(includeInactive);
     }
+    
+    logger.info(`✅ Retrieved ${products.length} products`);
     
     res.json({
       success: true,
       data: products,
     });
   } catch (error) {
-    console.error('Get products error:', error);
+    logger.error({ error }, '❌ Get products error');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -50,23 +57,28 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     
     if (!id) {
+      logger.warn('⚠️  Product ID missing in request');
       res.status(400).json({ error: 'Product ID is required' });
       return;
     }
     
+    logBusinessOperation('Fetching product by ID', { id });
     const product = await ProductModel.getById(id);
     
     if (!product) {
+      logger.warn(`⚠️  Product not found: ${id}`);
       res.status(404).json({ error: 'Product not found' });
       return;
     }
+    
+    logger.info(`✅ Retrieved product: ${product.name}`);
     
     res.json({
       success: true,
       data: product,
     });
   } catch (error) {
-    console.error('Get product error:', error);
+    logger.error({ error }, '❌ Get product error');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -77,23 +89,28 @@ router.get('/slug/:slug', async (req: Request, res: Response): Promise<void> => 
     const { slug } = req.params;
     
     if (!slug) {
+      logger.warn('⚠️  Product slug missing in request');
       res.status(400).json({ error: 'Product slug is required' });
       return;
     }
     
+    logBusinessOperation('Fetching product by slug', { slug });
     const product = await ProductModel.getBySlug(slug);
     
     if (!product) {
+      logger.warn(`⚠️  Product not found with slug: ${slug}`);
       res.status(404).json({ error: 'Product not found' });
       return;
     }
+    
+    logger.info(`✅ Retrieved product by slug: ${product.name}`);
     
     res.json({
       success: true,
       data: product,
     });
   } catch (error) {
-    console.error('Get product by slug error:', error);
+    logger.error({ error }, '❌ Get product by slug error');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -107,6 +124,7 @@ const createProductSchema = z.object({
   shortDescription: z.string().optional(),
   price: z.string().optional(),
   images: z.array(z.string()).optional(),
+  pdfUrl: z.string().optional(),
   specifications: z.any().optional(),
   features: z.array(z.string()).optional(),
   displayOrder: z.string().optional(),
@@ -164,6 +182,7 @@ const updateProductSchema = z.object({
   shortDescription: z.string().optional(),
   price: z.string().optional(),
   images: z.array(z.string()).optional(),
+  pdfUrl: z.string().optional(),
   specifications: z.any().optional(),
   features: z.array(z.string()).optional(),
   displayOrder: z.string().optional(),

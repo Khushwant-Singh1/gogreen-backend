@@ -43,6 +43,13 @@
       "when": 1767861354593,
       "tag": "0005_mixed_celestials",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1769350136471,
+      "tag": "0006_spooky_whistler",
+      "breakpoints": true
     }
   ]
 }
