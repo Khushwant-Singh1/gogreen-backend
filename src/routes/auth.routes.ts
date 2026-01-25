@@ -41,10 +41,11 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
 
     // Generate JWT
     const payload: JWTPayload = {
-      userId: user.id,
-      email: user.email,
-      role: user.role
-    };
+  id: user.id,
+  userId: user.id,
+  email: user.email,
+  role: user.role
+};
 
     const token = jwt.sign(payload, config.jwt.secret, {
       expiresIn: config.jwt.expiresIn
