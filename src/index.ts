@@ -9,6 +9,11 @@ import categoriesRoutes from './routes/categories.routes.js';
 import subcategoriesRoutes from './routes/subcategories.routes.js';
 import productsRoutes from './routes/products.routes.js';
 import specificationsRoutes from './routes/specifications.routes.js';
+import postsRoutes from './routes/posts.js';
+import uploadRoutes from './routes/upload.js';
+import settingsRoutes from './routes/settings.routes.js';
+import contactRoutes from './routes/contact.routes.js';
+import analyticsRoutes from './routes/analytics.routes.js';
 import { authenticateToken, requireAdmin, requireEditor } from './middleware/auth.middleware.js';
 
 const logger = pino();
@@ -18,6 +23,7 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
+app.use('/uploads', express.static('uploads')); // Serve uploaded images
 
 // CORS configuration (adjust for your frontend URL)
 app.use((req, res, next) => {
@@ -43,6 +49,11 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/subcategories', subcategoriesRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/specifications', specificationsRoutes);
+app.use('/api/posts', postsRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Protected routes examples
 app.get('/api/admin/dashboard', authenticateToken, requireAdmin, (req, res) => {

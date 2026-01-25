@@ -1,0 +1,2 @@
+-- Initial schema (placeholder - database already exists)
+-- This migration file was created retroactively

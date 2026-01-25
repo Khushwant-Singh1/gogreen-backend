@@ -1,5 +1,8 @@
 import { pgTable, uuid, varchar, timestamp, pgEnum, text, json, jsonb, boolean, serial, integer } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { index } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+
 
 // Enum for user roles
 export const userRoleEnum = pgEnum('user_role', ['admin', 'editor']);
@@ -48,6 +51,7 @@ export const subcategories = pgTable('subcategories', {
 });
 
 // Products table
+
 export const products = pgTable('products', {
   id: uuid('id').primaryKey().defaultRandom(),
   subcategoryId: uuid('subcategory_id').notNull().references(() => subcategories.id, { onDelete: 'cascade' }),
@@ -64,6 +68,13 @@ export const products = pgTable('products', {
   isFeatured: boolean('is_featured').notNull().default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => {
+  return {
+    searchIndex: index('search_index').using('gin', sql`(
+      setweight(to_tsvector('english', ${table.name}), 'A') ||
+      setweight(to_tsvector('english', coalesce(${table.description}, '')), 'B')
+    )`),
+  };
 });
 // Audit logs table
 export const auditLogs = pgTable('audit_logs', {
@@ -153,3 +164,59 @@ export type NewSubcategory = typeof subcategories.$inferInsert;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
 export type PendingChange = typeof pendingChanges.$inferSelect;
 export type NewPendingChange = typeof pendingChanges.$inferInsert;
+
+// Blog Posts table
+export const posts = pgTable('posts', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  slug: text('slug').notNull().unique(),
+  content: jsonb('content').notNull(),
+  published: boolean('published').default(false),
+  publishedAt: timestamp('published_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export type Post = typeof posts.$inferSelect;
+export type NewPost = typeof posts.$inferInsert;
+export const globalSettings = pgTable('global_settings', {
+  key: varchar('key', { length: 255 }).primaryKey(),
+  value: text('value').notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export type GlobalSetting = typeof globalSettings.$inferSelect;
+export type NewGlobalSetting = typeof globalSettings.$inferInsert;
+
+export const contactSubmissions = pgTable('contact_submissions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull(),
+  phone: varchar('phone', { length: 50 }),
+  message: text('message').notNull(),
+  status: varchar('status', { length: 50 }).notNull().default('new'), // new, read, archived
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export type ContactSubmission = typeof contactSubmissions.$inferSelect;
+export type NewContactSubmission = typeof contactSubmissions.$inferInsert;
+
+// Analytics table for tracking page views
+export const analytics = pgTable('analytics', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  page: varchar('page', { length: 500 }).notNull(),
+  ipAddress: varchar('ip_address', { length: 45 }),
+  userAgent: text('user_agent'),
+  referer: varchar('referer', { length: 500 }),
+  country: varchar('country', { length: 100 }),
+  device: varchar('device', { length: 50 }), // mobile, tablet, desktop
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => {
+  return {
+    pageIdx: index('analytics_page_idx').on(table.page),
+    dateIdx: index('analytics_date_idx').on(table.createdAt),
+  };
+});
+
+export type AnalyticsEntry = typeof analytics.$inferSelect;
+export type NewAnalyticsEntry = typeof analytics.$inferInsert;

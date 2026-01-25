@@ -1,6 +1,6 @@
 import { db } from '../db/index.js';
 import { products } from '../db/schema.js';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, sql } from 'drizzle-orm';
 
 export interface Product {
   id: string;
@@ -105,5 +105,67 @@ export class ProductModel {
       .where(eq(products.id, id))
       .returning();
     return result.length > 0;
+  }
+  static async search(query: string, includeInactive = false): Promise<Product[]> {
+    // Use multiple search strategies for better results:
+    // 1. Exact match and prefix matching with ILIKE
+    // 2. Full-text search with PostgreSQL
+    // 3. Trigram similarity for typo tolerance
+    
+    const searchPattern = `%${query}%`;
+    
+    return await db
+      .select()
+      .from(products)
+      .where(
+        and(
+          includeInactive ? undefined : eq(products.isActive, true),
+          sql`(
+            -- Strategy 1: Pattern matching (fast, handles partial matches)
+            LOWER(${products.name}) LIKE LOWER(${searchPattern}) OR
+            LOWER(COALESCE(${products.description}, '')) LIKE LOWER(${searchPattern}) OR
+            LOWER(COALESCE(${products.shortDescription}, '')) LIKE LOWER(${searchPattern}) OR
+            
+            -- Strategy 2: Full-text search (handles multiple words)
+            (
+              setweight(to_tsvector('english', ${products.name}), 'A') ||
+              setweight(to_tsvector('english', coalesce(${products.description}, '')), 'B') ||
+              setweight(to_tsvector('english', coalesce(${products.shortDescription}, '')), 'C')
+            ) @@ plainto_tsquery('english', ${query}) OR
+            
+            -- Strategy 3: Trigram similarity (handles typos)
+            similarity(LOWER(${products.name}), LOWER(${query})) > 0.2 OR
+            
+            -- Strategy 4: Word distance (Levenshtein) for close matches
+            word_similarity(LOWER(${query}), LOWER(${products.name})) > 0.3
+          )`
+        )
+      )
+      .orderBy(
+        // Order by relevance score combining multiple factors
+        desc(sql`(
+          -- Exact match gets highest score
+          CASE WHEN LOWER(${products.name}) = LOWER(${query}) THEN 100 ELSE 0 END +
+          
+          -- Starts with query gets high score
+          CASE WHEN LOWER(${products.name}) LIKE LOWER(${query} || '%') THEN 50 ELSE 0 END +
+          
+          -- Contains query gets medium score
+          CASE WHEN LOWER(${products.name}) LIKE LOWER(${searchPattern}) THEN 25 ELSE 0 END +
+          
+          -- Full-text search ranking
+          ts_rank(
+            setweight(to_tsvector('english', ${products.name}), 'A') ||
+            setweight(to_tsvector('english', coalesce(${products.description}, '')), 'B'),
+            plainto_tsquery('english', ${query})
+          ) * 10 +
+          
+          -- Trigram similarity score
+          similarity(LOWER(${products.name}), LOWER(${query})) * 30 +
+          
+          -- Word similarity score
+          word_similarity(LOWER(${query}), LOWER(${products.name})) * 20
+        )`)
+      );
   }
 }

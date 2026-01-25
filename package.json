@@ -30,6 +30,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@types/multer": "^2.0.0",
     "argon2": "^0.44.0",
     "axios": "^1.13.2",
     "cookie-parser": "^1.4.7",
@@ -37,6 +38,7 @@
     "drizzle-orm": "^0.45.1",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.0.2",
     "pg": "^8.16.3",
     "pino": "^10.1.0",
     "zod": "^4.3.2"

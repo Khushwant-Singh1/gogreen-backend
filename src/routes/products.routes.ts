@@ -20,9 +20,12 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const includeInactive = req.query.includeInactive === 'true';
     const subcategoryId = req.query.subcategoryId as string | undefined;
     const featured = req.query.featured === 'true';
+    const searchQuery = req.query.search as string | undefined;
     
     let products;
-    if (featured) {
+    if (searchQuery) {
+      products = await ProductModel.search(searchQuery, includeInactive);
+    } else if (featured) {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
       products = await ProductModel.getFeatured(limit);
     } else if (subcategoryId) {
