@@ -11,6 +11,7 @@ export const ProductSchema = z.object({
   images: z.array(z.string()).optional(),
   specifications: z.any().optional(),
   features: z.array(z.string()).optional(),
+  seoKeywords: z.array(z.string()).optional(),
   displayOrder: z.string().optional(),
   isActive: z.boolean().default(true),
   isFeatured: z.boolean().default(false),

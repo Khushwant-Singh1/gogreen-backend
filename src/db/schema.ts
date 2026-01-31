@@ -64,6 +64,7 @@ export const products = pgTable('products', {
   pdfUrl: varchar('pdf_url', { length: 500 }),
   specifications: json('specifications'),
   features: json('features').$type<string[]>(),
+  seoKeywords: json('seo_keywords').$type<string[]>(),
   displayOrder: varchar('display_order', { length: 10 }),
   isActive: boolean('is_active').notNull().default(true),
   isFeatured: boolean('is_featured').notNull().default(false),
