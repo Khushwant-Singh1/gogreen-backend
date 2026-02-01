@@ -52,13 +52,21 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     });
 
     // Set cookie
-    res.cookie(config.cookie.name, token, {
+    const cookieOptions = {
       httpOnly: config.cookie.httpOnly,
       secure: config.cookie.secure,
       sameSite: config.cookie.sameSite,
       maxAge: config.cookie.maxAge,
       path: config.cookie.path
+    };
+    
+    console.log('🍪 Setting cookie with options:', {
+      name: config.cookie.name,
+      options: cookieOptions,
+      nodeEnv: process.env.NODE_ENV
     });
+    
+    res.cookie(config.cookie.name, token, cookieOptions);
 
     res.json({
       message: 'Login successful',

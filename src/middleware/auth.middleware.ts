@@ -14,6 +14,14 @@ export const authenticateToken = (
 ): void => {
   const token = req.cookies[config.cookie.name];
 
+  console.log('🔐 Auth middleware check:', {
+    hasCookie: !!token,
+    cookieName: config.cookie.name,
+    allCookies: Object.keys(req.cookies),
+    origin: req.headers.origin,
+    nodeEnv: process.env.NODE_ENV
+  });
+
   if (!token) {
     res.status(401).json({ error: 'Authentication required' });
     return;
