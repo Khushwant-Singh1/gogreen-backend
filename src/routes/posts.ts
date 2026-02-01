@@ -13,6 +13,8 @@ const createPostSchema = z.object({
   title: z.string().min(1),
   slug: z.string().min(1),
   content: z.object({}).passthrough(), // Accept any valid JSON object for Tiptap
+  coverImage: z.string().optional(),
+  seoKeywords: z.array(z.string()).optional(),
   published: z.boolean().optional(),
 });
 
@@ -45,12 +47,25 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET single post by slug
-router.get('/:slug', async (req, res) => {
+// GET single post by slug or ID
+router.get('/:identifier', async (req, res) => {
   try {
-    const post = await db.query.posts.findFirst({
-      where: eq(posts.slug, req.params.slug),
-    });
+    const identifier = req.params.identifier;
+    let post;
+    
+    // Check if identifier is numeric (ID) or string (slug)
+    if (/^\d+$/.test(identifier)) {
+      // It's an ID
+      const id = parseInt(identifier);
+      post = await db.query.posts.findFirst({
+        where: eq(posts.id, id),
+      });
+    } else {
+      // It's a slug
+      post = await db.query.posts.findFirst({
+        where: eq(posts.slug, identifier),
+      });
+    }
     
     if (!post) {
       res.status(404).json({ error: 'Post not found' });
@@ -82,6 +97,8 @@ router.post('/', authenticateToken, requireEditor, async (req, res) => {
       title: body.title,
       slug: body.slug,
       content: body.content,
+      coverImage: body.coverImage || null,
+      seoKeywords: body.seoKeywords || null,
       published: body.published || false,
       publishedAt: body.published ? new Date() : null,
     }).returning();

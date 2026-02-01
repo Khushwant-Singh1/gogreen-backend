@@ -173,9 +173,11 @@ export const posts = pgTable('posts', {
   title: text('title').notNull(),
   slug: text('slug').notNull().unique(),
   content: jsonb('content').notNull(),
+  coverImage: varchar('cover_image', { length: 500 }),
+  seoKeywords: json('seo_keywords').$type<string[]>(),
   published: boolean('published').default(false),
   publishedAt: timestamp('published_at'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdAt: timestamp('updated_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
