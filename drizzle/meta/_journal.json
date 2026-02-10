@@ -71,6 +71,13 @@
       "when": 1770452597444,
       "tag": "0009_slow_tombstone",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1770709457657,
+      "tag": "0010_ordinary_squirrel_girl",
+      "breakpoints": true
     }
   ]
 }

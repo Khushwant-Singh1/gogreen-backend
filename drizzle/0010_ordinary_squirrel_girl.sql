@@ -1,0 +1,1 @@
+ALTER TABLE "products" ADD COLUMN "cover_image" varchar(500);

@@ -11,6 +11,7 @@ export interface Product {
   shortDescription: string | null;
   price: string | null;
   images: string[] | null;
+  coverImage: string | null;
   pdfUrl: string | null;
   specifications: any | null;
   features: string[] | null;
@@ -32,6 +33,7 @@ export class ProductModel {
     shortDescription?: string | undefined;
     price?: string | undefined;
     images?: string[] | undefined;
+    coverImage?: string | undefined;
     pdfUrl?: string | undefined;
     specifications?: any;
     features?: string[] | undefined;
