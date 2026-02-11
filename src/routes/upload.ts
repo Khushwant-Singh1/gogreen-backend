@@ -40,8 +40,17 @@ const upload = multer({
 });
 
 router.post('/', authenticateToken, requireEditor, upload.single('file'), (req: Request, res: Response) => {
-  if (!req.file) {
-    res.status(400).json({ error: 'No file uploaded' });
+  console.log('Upload Request Headers:', req.headers);
+  console.log('Upload Request File:', req.file);
+  console.log('Upload Request Body:', req.body);
+  
+    if (!req.file) {
+    console.error('No file in request');
+    res.status(400).json({ 
+      error: 'No file uploaded',
+      receivedContentType: req.headers['content-type'],
+      receivedLength: req.headers['content-length']
+    });
     return;
   }
   
