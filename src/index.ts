@@ -36,7 +36,8 @@ app.use((req, res, next) => {
   const allowedOrigins = [
     process.env.FRONTEND_URL,
     'http://localhost:3000',
-    'https://gogreen-frontend.vercel.app'
+    'https://gogreen-frontend.vercel.app',
+    'https://www.vidhienterprises.com'
   ].filter(Boolean).map(origin => origin?.replace(/\/$/, '')); // Remove trailing slashes
   
   const origin = req.headers.origin?.replace(/\/$/, ''); // Remove trailing slash from request origin
