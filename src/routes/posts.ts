@@ -170,5 +170,38 @@ router.put('/:identifier', authenticateToken, requireEditor, async (req, res) =>
   }
 });
 
+// DELETE post (Protected)
+router.delete('/:id', authenticateToken, requireEditor, async (req, res) => {
+  try {
+    const idParam = req.params.id;
+    if (!idParam) {
+       res.status(400).json({ error: 'Missing ID' });
+       return;
+    }
+    const id = parseInt(idParam);
+    
+    if (isNaN(id)) {
+      res.status(400).json({ error: 'Invalid ID' });
+      return;
+    }
+
+    const existingPost = await db.query.posts.findFirst({
+      where: eq(posts.id, id),
+    });
+
+    if (!existingPost) {
+      res.status(404).json({ error: 'Post not found' });
+      return;
+    }
+
+    await db.delete(posts).where(eq(posts.id, id));
+    
+    res.json({ message: 'Post deleted successfully' });
+  } catch (error) {
+    console.error('Delete post error:', error);
+    res.status(500).json({ error: 'Failed to delete post' });
+  }
+});
+
 
 export default router;
